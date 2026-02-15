@@ -12,7 +12,6 @@ builds:
       - arm64
     goos:
       - linux
-    main: ./cmd
 
 dockers:
   - build_flag_templates:
