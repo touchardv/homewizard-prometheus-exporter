@@ -13,8 +13,8 @@ import (
 var exportMetrics = &cobra.Command{
 	Use: "export-metrics",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		url := viper.GetString("url")
-		token := viper.GetString("token")
+		url := viper.GetString(urlProperty)
+		token := viper.GetString(tokenProperty)
 		client := homewizard.NewAPIv2Client(url, homewizard.WithToken(token))
 		reg := prometheus.NewRegistry()
 		reg.Register(client)
@@ -25,6 +25,7 @@ var exportMetrics = &cobra.Command{
 }
 
 func init() {
-	exportMetrics.Flags().StringP("token", "t", "", "The user authentication token")
-	viper.BindPFlag("token", exportMetrics.Flags().Lookup("token"))
+	exportMetrics.Flags().StringP(tokenProperty, "t", "", "The user authentication token")
+	exportMetrics.MarkFlagRequired(tokenProperty)
+	viper.BindPFlag(tokenProperty, exportMetrics.Flags().Lookup(tokenProperty))
 }

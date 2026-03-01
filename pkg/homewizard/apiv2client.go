@@ -56,7 +56,7 @@ func WithToken(token string) Option {
 }
 
 func NewAPIv2Client(url string, opts ...Option) *APIv2Client {
-	fmt.Printf("URL=%s", url)
+	logrus.Debug("Homewizard device URL=", url)
 	c := &APIv2Client{
 		url: url,
 		client: &http.Client{
@@ -89,7 +89,7 @@ func (c *APIv2Client) CreateLocalUser(username string) error {
 	if resp.StatusCode == http.StatusForbidden {
 		logrus.Warn("Retry later")
 	} else if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return fmt.Errorf("unexpected server http response: %s", resp.Status)
 	}
 
 	b, err := io.ReadAll(resp.Body)
@@ -124,6 +124,33 @@ func (c APIv2Client) GetMeasurement() (measurement, error) {
 	}
 
 	return m, nil
+}
+
+type User struct {
+	Name    string
+	Current bool
+}
+
+func (c APIv2Client) ListUsers() ([]User, error) {
+	req, err := http.NewRequest(http.MethodGet, c.urlWithPath("api/user"), nil)
+	if err != nil {
+		return []User{}, err
+	}
+	req.Header.Add("Authorization", "Bearer "+c.token)
+	req.Header.Add("X-Api-Version", "2")
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return []User{}, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return []User{}, fmt.Errorf("unexpected server http response: %s", resp.Status)
+	}
+
+	var users []User
+	err = json.NewDecoder(resp.Body).Decode(&users)
+	return users, err
 }
 
 func (c *APIv2Client) urlWithPath(path string) string {
