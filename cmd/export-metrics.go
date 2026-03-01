@@ -18,10 +18,15 @@ var exportMetrics = &cobra.Command{
 		client := homewizard.NewAPIv2Client(url, homewizard.WithToken(token))
 		reg := prometheus.NewRegistry()
 		reg.Register(client)
+		http.HandleFunc("/health-check", healthCheck)
 		http.Handle("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{}))
 		http.ListenAndServe(":8080", nil)
 		return nil
 	},
+}
+
+func healthCheck(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func init() {
