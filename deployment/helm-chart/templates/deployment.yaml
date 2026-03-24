@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: homewizard-prometheus-exporter
+  name: homewizard-prometheus-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: homewizard-prometheus-exporter
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: homewizard-prometheus-exporter
+    spec:
+      containers:
+        - name: exporter
+          env:
+            - name: HOMEWIZARD_PROMETHEUS_EXPORTER_URL
+              valueFrom:
+                secretKeyRef:
+                  name: homewizard
+                  key: url
+            - name: HOMEWIZARD_PROMETHEUS_EXPORTER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: homewizard
+                  key: token
+          image: {{ .Values.pod.image }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: web
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /health-check
+              port: 8080
+            initialDelaySeconds: 3
+          resources:
+            limits:
+              cpu: 250m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi
+      nodeSelector:
+        worker: "true"

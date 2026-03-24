@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/path: /metrics
+    prometheus.io/port: "8080"
+    prometheus.io/scheme: http
+    prometheus.io/scrape: "true"
+  name: homewizard-prometheus-exporter
+spec:
+  ports:
+    - name: web
+      port: 8080
+      protocol: TCP
+  selector:
+    app: homewizard-prometheus-exporter
