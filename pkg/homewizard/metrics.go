@@ -121,6 +121,12 @@ var (
 		[]string{},
 		nil,
 	)
+	extGasMeterDesc = prometheus.NewDesc(
+		"homewizard_ext_gas_meter_m3",
+		"The total of gaz in m3.",
+		[]string{},
+		nil,
+	)
 )
 
 // Collect implements [prometheus.Collector].
@@ -150,6 +156,11 @@ func (c APIv2Client) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(currentL1ADesc, prometheus.GaugeValue, m.CurrentL1A)
 	ch <- prometheus.MustNewConstMetric(currentL2ADesc, prometheus.GaugeValue, m.CurrentL2A)
 	ch <- prometheus.MustNewConstMetric(currentL3ADesc, prometheus.GaugeValue, m.CurrentL3A)
+	for _, em := range m.External {
+		if em.Type == "gas_meter" {
+			ch <- prometheus.MustNewConstMetric(extGasMeterDesc, prometheus.GaugeValue, em.Value)
+		}
+	}
 }
 
 // Describe implements [prometheus.Collector].
@@ -174,4 +185,19 @@ func (c APIv2Client) Describe(ch chan<- *prometheus.Desc) {
 	ch <- currentL1ADesc
 	ch <- currentL2ADesc
 	ch <- currentL3ADesc
+	c.describeExternalDevices(ch)
+}
+
+func (c APIv2Client) describeExternalDevices(ch chan<- *prometheus.Desc) {
+	m, err := c.GetMeasurement()
+	if err != nil {
+		logrus.Error(err)
+		return
+	}
+
+	for _, em := range m.External {
+		if em.Type == "gas_meter" {
+			ch <- extGasMeterDesc
+		}
+	}
 }
